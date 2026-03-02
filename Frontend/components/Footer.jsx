@@ -144,14 +144,15 @@ const Footer = () => {
             © 2026 Humanity Calls Trust®. All Rights Reserved.
           </p>
           <a href="https://www.cortexit.in" target="_blank">
-            <div className="flex items-center text-xs font-bold text-[#167ef9] text-center mt-4 hover:text-[#167ef9]/80">
+            <div className="flex items-center gap-2 text-[#E2ECED] text-xs font-bold text-center mt-4 hover:text-[#E2ECED]/80 transition-colors cursor-pointer">
               <p className="">Designed and Developed by</p>
-              <div className="flex gap-0.5 items-center ">
+              <div className="flex items-center ">
                 <img
-                  className="h-12"
-                  src="https://res.cloudinary.com/daokrum7i/image/upload/v1770092123/CortexFooter_r4g1ph.png"
+                  className="h-9"
+                  src={cortexLogo}
                   alt="Cortex"
                 />
+                <p>CORTEX™</p>
               </div>
             </div>
           </a>
