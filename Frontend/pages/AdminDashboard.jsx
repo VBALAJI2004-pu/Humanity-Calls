@@ -23,6 +23,7 @@ import {
   FaTrash,
   FaCrop,
   FaGripVertical,
+  FaEnvelope,
 } from "react-icons/fa";
 import hclogo from "../assets/humanitycallslogo.avif";
 import { PROGRAMS } from "../constants";
@@ -115,6 +116,16 @@ const AdminDashboard = ({ defaultTab }) => {
   // Admin volunteer profile-image crop
   const [rawVolPicSrc, setRawVolPicSrc] = useState("");
   const [isUploadingVolPic, setIsUploadingVolPic] = useState(false);
+  
+  // Mass Email State
+  const [mailSubject, setMailSubject] = useState("");
+  const [mailHeading, setMailHeading] = useState("");
+  const [mailBody, setMailBody] = useState("");
+  const [selectedRecipientGroups, setSelectedRecipientGroups] = useState([]);
+  const [mailHistory, setMailHistory] = useState([]);
+  const [isSendingMail, setIsSendingMail] = useState(false);
+  const [isLoadingMailHistory, setIsLoadingMailHistory] = useState(false);
+  const [showMailHistoryDetail, setShowMailHistoryDetail] = useState(null);
 
   useEffect(() => {
     const token = sessionStorage.getItem("adminToken");
@@ -130,6 +141,8 @@ const AdminDashboard = ({ defaultTab }) => {
       fetchVolunteers(volunteerStatusTab);
     } else if (activeTab === "requests") {
       fetchVolunteers("pending");
+    } else if (activeTab === "send-mails") {
+      fetchMailHistory();
     }
     fetchPendingCount();
   }, [activeTab, galleryFilter, volunteerStatusTab]);
@@ -570,8 +583,65 @@ const AdminDashboard = ({ defaultTab }) => {
     setShowExportModal(false);
   };
 
+  const fetchMailHistory = async () => {
+    setIsLoadingMailHistory(true);
+    try {
+      const token = sessionStorage.getItem("adminToken");
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/mass-mail-history`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMailHistory(response.data);
+    } catch {
+      toast.error("Failed to fetch mail history");
+    } finally {
+      setIsLoadingMailHistory(false);
+    }
+  };
+
+  const handleSendMassEmail = async (e) => {
+    e.preventDefault();
+    if (selectedRecipientGroups.length === 0) {
+      toast.error("Please select at least one recipient group");
+      return;
+    }
+    setIsSendingMail(true);
+    try {
+      const token = sessionStorage.getItem("adminToken");
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/send-mass-email`,
+        {
+          subject: mailSubject,
+          heading: mailHeading,
+          body: mailBody,
+          selectedGroups: selectedRecipientGroups,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success("Mass email sending initiated!");
+      setMailSubject("");
+      setMailHeading("");
+      setMailBody("");
+      setSelectedRecipientGroups([]);
+      fetchMailHistory();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to send mass email");
+    } finally {
+      setIsSendingMail(false);
+    }
+  };
+
+  const toggleRecipientGroup = (group) => {
+    if (selectedRecipientGroups.includes(group)) {
+      setSelectedRecipientGroups((prev) => prev.filter((g) => g !== group));
+    } else {
+      setSelectedRecipientGroups((prev) => [...prev, group]);
+    }
+  };
+
   const menuItems = [
     { id: "volunteers", label: "Volunteers", icon: <FaUserFriends /> },
+    { id: "send-mails", label: "Send Mails", icon: <FaEnvelope /> },
     { id: "requests", label: "Volunteer Requests", icon: <FaClipboardList /> },
     { id: "gallery", label: "Gallery", icon: <FaImages /> },
     { id: "add-gallery", label: "Add Gallery", icon: <FaPlusCircle /> },
@@ -1247,6 +1317,156 @@ const AdminDashboard = ({ defaultTab }) => {
                       {isUploading ? "Uploading..." : `Upload ${imageItems.length > 1 ? `${imageItems.length} Images` : "Image"}`}
                     </button>
                   </form>
+                </div>
+              )}
+
+              {activeTab === "send-mails" && (
+                <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  {/* Draft Selection */}
+                  <div className="bg-white rounded-3xl shadow-xl border border-border p-8 md:p-12">
+                    <h2 className="text-3xl font-bold text-primary mb-8 flex items-center gap-3">
+                      <FaEnvelope /> Draft Mass Email
+                    </h2>
+                    <form onSubmit={handleSendMassEmail} className="space-y-8">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <label className="text-sm font-bold text-text-body uppercase tracking-widest">Email Subject</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="e.g. Important Update for Volunteers"
+                            value={mailSubject}
+                            onChange={(e) => setMailSubject(e.target.value)}
+                            className="w-full px-6 py-4 border border-border bg-bg/30 rounded-2xl focus:border-primary outline-none transition-all"
+                          />
+                        </div>
+                        <div className="space-y-4">
+                          <label className="text-sm font-bold text-text-body uppercase tracking-widest">Heading (Inside Body)</label>
+                          <input
+                            required
+                            type="text"
+                            placeholder="e.g. A Message from the Team"
+                            value={mailHeading}
+                            onChange={(e) => setMailHeading(e.target.value)}
+                            className="w-full px-6 py-4 border border-border bg-bg/30 rounded-2xl focus:border-primary outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-sm font-bold text-text-body uppercase tracking-widest">Mail Body</label>
+                        <textarea
+                          required
+                          rows="6"
+                          placeholder="Your message goes here..."
+                          value={mailBody}
+                          onChange={(e) => setMailBody(e.target.value)}
+                          className="w-full px-6 py-4 border border-border bg-bg/30 rounded-2xl focus:border-primary outline-none transition-all resize-none"
+                        />
+                      </div>
+
+                      <div className="space-y-4">
+                        <label className="text-sm font-bold text-text-body uppercase tracking-widest">Recipient Groups</label>
+                        <div className="flex flex-wrap gap-4">
+                          {[
+                            { id: "active_volunteers", label: "Active Volunteers" },
+                            { id: "temporary_volunteers", label: "Temporary Volunteers" },
+                            { id: "users", label: "Users Only" },
+                            { id: "all", label: "All" },
+                          ].map((group) => (
+                            <button
+                              key={group.id}
+                              type="button"
+                              onClick={() => toggleRecipientGroup(group.id)}
+                              className={`px-6 py-3 rounded-xl font-bold border transition-all flex items-center gap-2 ${
+                                selectedRecipientGroups.includes(group.id)
+                                  ? "bg-primary text-white border-primary shadow-lg shadow-primary/20"
+                                  : "bg-white text-text-body/60 border-border hover:border-primary/40"
+                              }`}
+                            >
+                              <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedRecipientGroups.includes(group.id) ? "bg-white text-primary" : "bg-bg border-border"}`}>
+                                {selectedRecipientGroups.includes(group.id) && <FaCheck size={10} />}
+                              </div>
+                              {group.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isSendingMail}
+                        className="w-full bg-primary text-white font-bold py-5 rounded-2xl hover:bg-primary/90 transition-all shadow-xl shadow-primary/20 active:scale-[0.98] uppercase tracking-widest text-lg disabled:opacity-70 flex items-center justify-center gap-3"
+                      >
+                        {isSendingMail ? (
+                          <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Initiating...</>
+                        ) : (
+                          <><FaEnvelope /> Send Mass Email</>
+                        )}
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* History List */}
+                  <div className="bg-white rounded-3xl shadow-xl border border-border p-8">
+                    <h3 className="text-2xl font-bold text-primary mb-8">Mail History</h3>
+                    {isLoadingMailHistory ? (
+                      <div className="py-12 flex flex-col items-center gap-4">
+                        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+                        <p className="text-text-body/60 font-medium italic">Loading history...</p>
+                      </div>
+                    ) : mailHistory.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                          <thead>
+                            <tr className="border-b border-border text-text-body/40 text-[11px] uppercase tracking-widest font-bold">
+                              <th className="px-4 py-4">Date</th>
+                              <th className="px-4 py-4">Subject</th>
+                              <th className="px-4 py-4">Recipients</th>
+                              <th className="px-4 py-4">Count</th>
+                              <th className="px-4 py-4 text-center">Actions</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border text-sm">
+                            {mailHistory.map((mail) => (
+                              <tr key={mail._id} className="hover:bg-bg/50 transition-colors group">
+                                <td className="px-4 py-4 whitespace-nowrap font-medium">
+                                  {new Date(mail.createdAt).toLocaleDateString("en-GB")}
+                                </td>
+                                <td className="px-4 py-4 font-bold text-text-body">
+                                  {mail.subject}
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex flex-wrap gap-1">
+                                    {mail.recipients.map((r) => (
+                                      <span key={r} className="text-[10px] bg-bg border border-border px-2 py-0.5 rounded-full capitalize">
+                                        {r.replace("_", " ")}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 font-black text-primary">
+                                  {mail.sentCount}
+                                </td>
+                                <td className="px-4 py-4 text-center">
+                                  <button
+                                    onClick={() => setShowMailHistoryDetail(mail)}
+                                    className="text-primary hover:underline font-bold text-xs"
+                                  >
+                                    View Details
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="py-12 text-center text-text-body/40 font-medium">
+                        No previous mass emails found.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -2224,6 +2444,86 @@ const AdminDashboard = ({ defaultTab }) => {
                     <><FaCheck size={12} /> Create ID & Approve</>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showApprovalPopup && approvedVolunteer && (
+        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-500 border border-white">
+            <div className="bg-gradient-to-br from-green-600 to-green-500 p-12 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_-20%,rgba(255,255,255,0.2),transparent)]" />
+              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl animate-bounce">
+                <FaCheck className="text-green-500 text-4xl" />
+              </div>
+              <h3 className="text-4xl font-black text-white mb-2 tracking-tight">Access Granted!</h3>
+              <p className="text-green-50/80 font-bold uppercase tracking-widest text-sm">Volunteer Successfully Onboarded</p>
+            </div>
+            
+            <div className="p-12 text-center bg-white">
+              <div className="mb-10 inline-block px-8 py-4 bg-bg rounded-3xl border border-border">
+                <p className="text-text-body/40 text-[10px] font-black uppercase tracking-widest mb-1">Assigned Identity</p>
+                <p className="text-3xl font-black text-primary tracking-tighter">{approvedVolunteer.volunteerId}</p>
+              </div>
+              
+              <div className="space-y-4 mb-10">
+                <p className="text-xl font-bold text-text-body">Welcome to the family, <span className="text-primary">{approvedVolunteer.fullName}</span>!</p>
+                <p className="text-text-body/60 text-sm leading-relaxed px-4">An official confirmation email with login credentials and a digital ID has been dispatched to <span className="font-bold text-text-body">{approvedVolunteer.email}</span>.</p>
+              </div>
+
+              <button
+                onClick={() => setShowApprovalPopup(false)}
+                className="w-full bg-primary text-white py-5 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Continue to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mail History Detail Modal */}
+      {showMailHistoryDetail && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="relative max-w-2xl w-full bg-white rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-border">
+              <div>
+                <h3 className="text-xl font-bold text-primary">Mail Details</h3>
+                <p className="text-xs text-text-body/40 mt-1">Sent on {new Date(showMailHistoryDetail.createdAt).toLocaleString("en-GB")}</p>
+              </div>
+              <button
+                onClick={() => setShowMailHistoryDetail(null)}
+                className="p-2 hover:bg-bg rounded-xl transition-colors text-text-body/40 hover:text-blood"
+              >
+                <FaTimes size={20} />
+              </button>
+            </div>
+            <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-body/40">Subject</label>
+                <p className="font-bold text-lg mt-1">{showMailHistoryDetail.subject}</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-body/40">Heading</label>
+                <p className="font-bold text-text-body mt-1">{showMailHistoryDetail.heading}</p>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-text-body/40">Message Body</label>
+                <div className="bg-bg/50 p-6 rounded-2xl border border-border text-sm leading-relaxed whitespace-pre-wrap mt-2">
+                  {showMailHistoryDetail.body}
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-body/40">Recipients</label>
+                  <p className="font-bold text-xs uppercase text-primary mt-1">{showMailHistoryDetail.recipients.join(", ").replace(/_/g, " ")}</p>
+                </div>
+                <div className="text-right">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-text-body/40">Sent Count</label>
+                  <p className="font-black text-2xl text-primary">{showMailHistoryDetail.sentCount}</p>
+                </div>
               </div>
             </div>
           </div>

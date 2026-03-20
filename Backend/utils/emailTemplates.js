@@ -241,3 +241,59 @@ export const volunteerApprovalTemplate = (vol, frontendUrl) => {
     `Congratulations! You are approved as a Humanity Calls Volunteer`
   );
 };
+
+/**
+ * Template 3 — Birthday notification: wishing the volunteer a happy birthday
+ */
+export const birthdayWishTemplate = (volunteerName) => {
+  const inner = `
+    <!-- Transactional-style Message Content -->
+    <tr>
+      <td style="padding:40px 32px 40px;">
+        <div style="color:#333333;font-size:16px;line-height:1.6;">
+          <p>Dear <strong>${volunteerName}</strong>,</p>
+          
+          <p>Warm Birthday Wishes to you! 🎂</p>
+          
+          <p>On behalf of <strong>Humanity Calls</strong>, we sincerely thank you for the time, compassion, and dedication you bring in creating a positive change in society. Your efforts truly reflect the spirit of humanity, and your contribution continues to inspire many.</p>
+          
+          <p>On your special day, we wish you happiness, good health, and continued strength to keep making a difference. May your journey be filled with purpose, kindness, and success.</p>
+          
+          <p>Thank you for being a valuable part of <strong>Humanity Calls</strong>.</p>
+          
+          <p>Wishing you a wonderful year ahead!</p>
+          
+          <p style="margin-top:24px;">Warm regards,</p>
+          <p style="margin:4px 0 0;font-weight:700;">Team Humanity Calls</p>
+        </div>
+      </td>
+    </tr>
+  `;
+
+  return wrap(inner, `Happy Birthday Wishes from Humanity Calls 🎉`);
+};
+
+/**
+ * Template 4 — Generic Mass Email: For admin-sent bulk notifications
+ */
+export const genericMassEmailTemplate = (name, heading, body) => {
+  const inner = `
+    <!-- Content Section -->
+    <tr>
+      <td style="padding:40px 32px 40px;">
+        <div style="color:#333333;font-size:16px;line-height:1.6;">
+          <p>Dear <strong>${name}</strong>,</p>
+          
+          <h2 style="margin:20px 0;color:#1A1A2E;font-size:22px;font-weight:800;line-height:1.3;">${heading}</h2>
+          
+          <div style="white-space: pre-wrap; margin-bottom: 30px;">${body}</div>
+          
+          <p>Best Regards,</p>
+          <p style="margin:4px 0 0;font-weight:700;color:#C62828;">Team Humanity Calls</p>
+        </div>
+      </td>
+    </tr>
+  `;
+
+  return wrap(inner, heading);
+};

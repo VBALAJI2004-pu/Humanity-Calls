@@ -2,6 +2,10 @@ import axios from "axios";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import User from "../models/User.js";
+import Volunteer from "../models/Volunteer.js";
+import MassMail from "../models/MassMail.js";
+import { genericMassEmailTemplate } from "../utils/emailTemplates.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,8 +27,114 @@ const getBrevoClient = () => {
 };
 
 /**
- * Fire-and-forget email sender
+ * Send mass email to selected groups
  */
+export const sendMassEmail = async (req, res) => {
+  const { subject, heading, body, selectedGroups } = req.body;
+
+  if (!subject || !heading || !body || !selectedGroups || selectedGroups.length === 0) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  try {
+    let recipientEmails = new Map(); // Use Map to store {email: name} and avoid duplicates
+
+    // Fetch recipients based on selected groups
+    if (selectedGroups.includes("all") || selectedGroups.includes("active_volunteers")) {
+      const activeVols = await Volunteer.find({ status: "active" }).select("email fullName");
+      activeVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+    }
+
+    if (selectedGroups.includes("all") || selectedGroups.includes("temporary_volunteers")) {
+      const tempVols = await Volunteer.find({ status: "temporary" }).select("email fullName");
+      tempVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+    }
+
+    if (selectedGroups.includes("all") || selectedGroups.includes("users")) {
+      const users = await User.find({ role: "user" }).select("email name");
+      users.forEach(u => recipientEmails.set(u.email, u.name));
+    }
+
+    const recipientsArray = Array.from(recipientEmails.entries()).map(([email, name]) => ({ email, name }));
+
+    if (recipientsArray.length === 0) {
+      return res.status(404).json({ message: "No recipients found for the selected groups" });
+    }
+
+    // Save history record
+    const massMailRecord = await MassMail.create({
+      subject,
+      heading,
+      body,
+      recipients: selectedGroups,
+      sentCount: recipientsArray.length,
+      admin: req.user._id,
+    });
+
+    // Send immediate response
+    res.status(200).json({ 
+      message: `Mass email initiated for ${recipientsArray.length} recipients`,
+      recordId: massMailRecord._id 
+    });
+
+    // Process sending in background (fire-and-forget with chunking)
+    processMassEmails(recipientsArray, subject, heading, body);
+
+  } catch (error) {
+    console.error("Mass Email Error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Helper to process emails in chunks
+ */
+const processMassEmails = async (recipients, subject, heading, body) => {
+  const CHUNK_SIZE = 25; // Send 25 emails at a time to stay safe
+  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  const senderName = process.env.BREVO_SENDER_NAME || "Humanity Calls";
+
+  for (let i = 0; i < recipients.length; i += CHUNK_SIZE) {
+    const chunk = recipients.slice(i, i + CHUNK_SIZE);
+    
+    // Send emails in the current chunk in parallel
+    await Promise.allSettled(chunk.map(async (recipient) => {
+      try {
+        const htmlContent = genericMassEmailTemplate(recipient.name, heading, body);
+        const emailPayload = {
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: recipient.email, name: recipient.name }],
+          subject: subject,
+          htmlContent: htmlContent,
+        };
+        await triggerEmail(emailPayload);
+      } catch (err) {
+        console.error(`Failed to send mass email to ${recipient.email}:`, err.message);
+      }
+    }));
+
+    // Optional delay between chunks to avoid hitting rate limits too hard
+    if (i + CHUNK_SIZE < recipients.length) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+  }
+  console.log(`Mass email sending completed for ${recipients.length} recipients.`);
+};
+
+/**
+ * Get mass email history
+ */
+export const getMassMailHistory = async (req, res) => {
+  try {
+    const history = await MassMail.find()
+      .populate("admin", "name email")
+      .sort({ createdAt: -1 });
+    res.status(200).json(history);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch email history" });
+  }
+};
+
 export const triggerEmail = async (emailPayload) => {
   const maxRetries = 3;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {

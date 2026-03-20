@@ -11,6 +11,7 @@ import galleryRoutes from "./routes/galleryRoutes.js";
 import volunteerRoutes from "./routes/volunteerRoutes.js";
 import idCardRoutes from "./routes/idCardRoutes.js";
 import { initAdmin } from "./controllers/authController.js";
+import { initBirthdayCron } from "./utils/birthdayCron.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,7 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB successfully");
     initAdmin();
+    initBirthdayCron();
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);

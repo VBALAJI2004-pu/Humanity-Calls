@@ -1,9 +1,21 @@
 import express from "express";
-import { sendEmail } from "../controllers/emailController.js";
+import { sendEmail, sendMassEmail, getMassMailHistory } from "../controllers/emailController.js";
+import { checkAndSendBirthdayEmails } from "../utils/birthdayCron.js";
 import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
+
+// Admin Mass Emailing
+router.post("/send-mass-email", protect, (req, res, next) => {
+  if (req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+  next();
+}, sendMassEmail);
+
+router.get("/mass-mail-history", protect, (req, res, next) => {
+  if (req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+  next();
+}, getMassMailHistory);
 
 // Rate limiting: 1 request per 30 seconds per IP
 const contactEmailLimiter = rateLimit({
@@ -18,5 +30,18 @@ const contactEmailLimiter = rateLimit({
 });
 
 router.post("/send-email", protect, contactEmailLimiter, sendEmail);
+
+// Test route to manually trigger birthday checks (Only for admin or internal use)
+router.get("/test-birthday-emails", protect, async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    await checkAndSendBirthdayEmails();
+    res.json({ message: "Birthday check triggered successfully. Check logs for details." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 export default router;
