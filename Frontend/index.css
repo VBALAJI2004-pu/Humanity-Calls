@@ -1,7 +1,6 @@
+@import url("https://fonts.cdnfonts.com/css/conthrax");
 @import "tailwindcss";
 @config "./tailwind.config.js";
-
-@import url("https://fonts.cdnfonts.com/css/conthrax");
 
 @layer base {
   body {

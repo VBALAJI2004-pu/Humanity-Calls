@@ -30,7 +30,7 @@ const getBrevoClient = () => {
  * Send mass email to selected groups
  */
 export const sendMassEmail = async (req, res) => {
-  const { subject, heading, body, selectedGroups } = req.body;
+  const { subject, heading, body, bannerImage, selectedGroups } = req.body;
 
   if (!subject || !heading || !body || !selectedGroups || selectedGroups.length === 0) {
     return res.status(400).json({ message: "Missing required fields" });
@@ -66,6 +66,7 @@ export const sendMassEmail = async (req, res) => {
       subject,
       heading,
       body,
+      bannerImage,
       recipients: selectedGroups,
       sentCount: recipientsArray.length,
       admin: req.user._id,
@@ -78,7 +79,7 @@ export const sendMassEmail = async (req, res) => {
     });
 
     // Process sending in background (fire-and-forget with chunking)
-    processMassEmails(recipientsArray, subject, heading, body);
+    processMassEmails(recipientsArray, subject, heading, body, bannerImage);
 
   } catch (error) {
     console.error("Mass Email Error:", error);
@@ -89,7 +90,7 @@ export const sendMassEmail = async (req, res) => {
 /**
  * Helper to process emails in chunks
  */
-const processMassEmails = async (recipients, subject, heading, body) => {
+const processMassEmails = async (recipients, subject, heading, body, bannerImage) => {
   const CHUNK_SIZE = 25; // Send 25 emails at a time to stay safe
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "Humanity Calls";
@@ -100,7 +101,7 @@ const processMassEmails = async (recipients, subject, heading, body) => {
     // Send emails in the current chunk in parallel
     await Promise.allSettled(chunk.map(async (recipient) => {
       try {
-        const htmlContent = genericMassEmailTemplate(recipient.name, heading, body);
+        const htmlContent = genericMassEmailTemplate(recipient.name, heading, body, bannerImage);
         const emailPayload = {
           sender: { name: senderName, email: senderEmail },
           to: [{ email: recipient.email, name: recipient.name }],

@@ -13,6 +13,10 @@ const massMailSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  bannerImage: {
+    type: String,
+    default: "",
+  },
   recipients: {
     type: [String],
     enum: ["active_volunteers", "temporary_volunteers", "users", "all"],

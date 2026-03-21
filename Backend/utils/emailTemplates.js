@@ -276,20 +276,33 @@ export const birthdayWishTemplate = (volunteerName) => {
 /**
  * Template 4 — Generic Mass Email: For admin-sent bulk notifications
  */
-export const genericMassEmailTemplate = (name, heading, body) => {
+export const genericMassEmailTemplate = (name, heading, body, bannerImage) => {
   const inner = `
+    ${bannerImage ? `
+    <!-- Banner Image -->
+    <tr>
+      <td style="padding:0;">
+        <img src="${bannerImage}" alt="Banner" style="width:100%;max-width:620px;display:block;height:auto;" />
+      </td>
+    </tr>
+    ` : ""}
+    
     <!-- Content Section -->
     <tr>
       <td style="padding:40px 32px 40px;">
         <div style="color:#333333;font-size:16px;line-height:1.6;">
-          <p>Dear <strong>${name}</strong>,</p>
+          <p style="margin-top:0;">Dear <strong>${name}</strong>,</p>
           
-          <h2 style="margin:20px 0;color:#1A1A2E;font-size:22px;font-weight:800;line-height:1.3;">${heading}</h2>
+          <h2 style="margin:24px 0 16px;color:#1A1A2E;font-size:24px;font-weight:900;line-height:1.3;letter-spacing:-0.02em;">${heading}</h2>
           
-          <div style="white-space: pre-wrap; margin-bottom: 30px;">${body}</div>
+          <div style="margin-bottom:32px;color:#444444;">
+            ${body}
+          </div>
           
-          <p>Best Regards,</p>
-          <p style="margin:4px 0 0;font-weight:700;color:#C62828;">Team Humanity Calls</p>
+          <div style="margin-top:40px;padding-top:24px;border-top:1px solid #EEF0F6;">
+            <p style="margin:0;font-size:14px;color:#666;">With Gratitude,</p>
+            <p style="margin:6px 0 0;font-weight:800;color:#C62828;font-size:16px;">Team Humanity Calls Trust</p>
+          </div>
         </div>
       </td>
     </tr>

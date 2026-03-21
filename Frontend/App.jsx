@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -32,6 +33,11 @@ const ProgramDetail = lazy(() => import("./pages/ProgramDetail"));
 const Profile = lazy(() => import("./pages/Profile"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const VolunteersManager = lazy(() => import("./pages/admin/VolunteersManager"));
+const GalleryManager = lazy(() => import("./pages/admin/GalleryManager"));
+const RequestsManager = lazy(() => import("./pages/admin/RequestsManager"));
+const EmailManager = lazy(() => import("./pages/admin/EmailManager"));
+const AddGalleryManager = lazy(() => import("./pages/admin/AddGalleryManager"));
 const Verify = lazy(() => import("./pages/Verify"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -92,17 +98,14 @@ const AppContent = () => {
             <Route path="/programs/:id" element={<ProgramDetail />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password/:token" element={<ResetPassword />} />
-            <Route
-              path="/add-gallery"
-              element={<AdminDashboard defaultTab="add-gallery" />}
-            />
-            <Route
-              path="/admin/gallery"
-              element={<AdminDashboard defaultTab="gallery" />}
-            />
+            <Route path="/admin" element={<AdminDashboard />}>
+              <Route index element={<Navigate to="volunteers" replace />} />
+              <Route path="volunteers" element={<VolunteersManager />} />
+              <Route path="gallery" element={<GalleryManager />} />
+              <Route path="requests" element={<RequestsManager />} />
+              <Route path="send-mails" element={<EmailManager />} />
+              <Route path="add-gallery" element={<AddGalleryManager />} />
+            </Route>
             <Route path="/verify/:volunteerId" element={<Verify />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

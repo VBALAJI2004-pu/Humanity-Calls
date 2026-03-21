@@ -27,7 +27,7 @@ const AdminLogin = () => {
       if (response.data.user.role === "admin") {
         sessionStorage.setItem("adminToken", response.data.token);
         toast.success("Login successful!");
-        navigate("/admin/dashboard");
+        navigate("/admin");
       } else {
         setError("Unauthorized access");
         toast.error("Unauthorized access");
