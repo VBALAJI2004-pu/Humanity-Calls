@@ -23,6 +23,7 @@ const Terms = lazy(() => import("./pages/Terms"));
 const Privacy = lazy(() => import("./pages/Privacy"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const DonationsMade = lazy(() => import("./pages/DonationsMade"));
+const OurTeam = lazy(() => import("./pages/OurTeam"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // Loading component
@@ -63,6 +64,7 @@ const App = () => {
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/disclaimer" element={<Disclaimer />} />
               <Route path="/donations-made" element={<DonationsMade />} />
+              <Route path="/our-team" element={<OurTeam />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

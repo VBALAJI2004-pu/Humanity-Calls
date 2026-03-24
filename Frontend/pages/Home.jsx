@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
@@ -11,12 +11,38 @@ import {
   animateParagraphIn,
   animateCards,
 } from "../utils/animations";
+import { fetchAdminContent, getAdminContent } from "../utils/contentStore";
 
 gsap.registerPlugin(ScrollTrigger);
 
 const Home = () => {
   const { t, i18n } = useTranslation();
   const containerRef = useRef(null);
+  const [carouselImages, setCarouselImages] = useState(getAdminContent().homeCarouselImages);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % carouselImages.length);
+    }, 3500);
+
+    return () => window.clearInterval(interval);
+  }, [carouselImages.length]);
+
+  useEffect(() => {
+    const refreshContent = async () => {
+      const data = await fetchAdminContent();
+      setCarouselImages(data.homeCarouselImages);
+      setActiveSlide(0);
+    };
+
+    refreshContent();
+    const interval = window.setInterval(refreshContent, 30000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     const isMobile = window.innerWidth < 768;
@@ -318,21 +344,29 @@ const Home = () => {
               }}
               data-animation="hero-glow"
             ></div>
-            <img
-              src="https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_900/v1767814232/hc_landing_page_xrcmny.png"
-              srcSet="
-                https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_400/v1767814232/hc_landing_page_xrcmny.png 400w,
-                https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_600/v1767814232/hc_landing_page_xrcmny.png 600w,
-                https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_900/v1767814232/hc_landing_page_xrcmny.png 900w
-              "
-              sizes="(max-width: 640px) 90vw, 900px"
-              alt={IMAGE_ALTS.hero}
-              className="z-10 w-full object-cover aspect-[4/3.5]"
-              data-animation="hero-image"
-              width="1000"
-              height="875"
-              fetchPriority="high"
-            />
+            <div className="relative" data-animation="hero-image">
+              <img
+                src={carouselImages[activeSlide]}
+                alt={IMAGE_ALTS.hero}
+                className="z-10 w-full object-cover aspect-[4/3.5] rounded-xl border border-gray-100 shadow-sm"
+                width="1000"
+                height="875"
+                fetchPriority="high"
+              />
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {carouselImages.map((image, index) => (
+                  <button
+                    key={`${image}-${index}`}
+                    type="button"
+                    onClick={() => setActiveSlide(index)}
+                    className={`h-2.5 rounded-full transition-all ${
+                      activeSlide === index ? "w-8 bg-white" : "w-2.5 bg-white/60"
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

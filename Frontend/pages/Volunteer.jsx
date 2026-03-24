@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
+import React, { useMemo, useState, useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -67,6 +67,15 @@ const Volunteer = () => {
     phone: "",
     interest: "",
   });
+  const [shareStatus, setShareStatus] = useState("");
+  const shareLink = useMemo(() => `${window.location.origin}/volunteer`, []);
+  const qrCodeUrl = useMemo(
+    () =>
+      `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+        shareLink
+      )}`,
+    [shareLink]
+  );
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -76,6 +85,15 @@ const Volunteer = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setShareStatus("Volunteer form link copied.");
+    } catch (error) {
+      setShareStatus("Copy failed. Please copy manually from the text box.");
+    }
   };
 
   return (
@@ -103,6 +121,26 @@ const Volunteer = () => {
 
         <div className="bg-[#F5F5F5] p-8 md:p-12 rounded-3xl border border-gray-200" data-animation="vol-form">
           <h3 className="text-2xl font-bold mb-8">{t("volunteer.form_title")}</h3>
+          <div className="mb-8 p-4 bg-white border border-gray-200 rounded-2xl">
+            <p className="text-sm font-semibold text-[#1A1A1A] mb-3">Share Volunteer Form</p>
+            <div className="flex gap-2">
+              <input
+                readOnly
+                value={shareLink}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm"
+              />
+              <Button type="button" variant="outline" onClick={handleCopyLink} className="px-4">
+                Copy Link
+              </Button>
+            </div>
+            <div className="mt-4 inline-block p-3 bg-white border border-gray-200 rounded-xl">
+              <img src={qrCodeUrl} alt="Volunteer form QR code" className="w-32 h-32" />
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Share this link or scan QR code to open the volunteer form directly.
+            </p>
+            {shareStatus ? <p className="text-sm text-[#8E1616] mt-2">{shareStatus}</p> : null}
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input

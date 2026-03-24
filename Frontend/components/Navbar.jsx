@@ -72,7 +72,7 @@ const LanguageSelector = ({ className }) => {
 const Navbar = () => {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
-  const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
   const { pathname } = useLocation();
   const navRef = useRef(null);
 
@@ -105,25 +105,41 @@ const Navbar = () => {
     }
   }, [isOpen]);
 
-  const navLinks = [
-    { label: t("nav.about_us"), href: "/about" },
-    { label: t("nav.poor_needy"), href: "/poor-needy" },
-    { label: t("nav.animal_rescue"), href: "/animal-rescue" },
-    { label: t("nav.wall_of_fame"), href: "/wall-of-fame" },
-  ];
-
-  const dropdownLinks = [
-    { label: t("nav.donations_made"), href: "/donations-made" },
+  const navStructure = [
+    { label: "Home", href: "/" },
     {
-      label: t("nav.contact_us"),
-      href: "#contact",
-      onClick: (e) => {
-        e.preventDefault();
-        const contactSection = document.getElementById("contact");
-        if (contactSection) {
-          contactSection.scrollIntoView({ behavior: "smooth" });
-        }
-      },
+      label: "Who We Are?",
+      items: [
+        { label: t("nav.about_us"), href: "/about" },
+        { label: "Our Team", href: "/our-team" },
+      ],
+    },
+    {
+      label: "What We Do?",
+      items: [
+        { label: "Child Education", href: "/poor-needy" },
+        { label: "Child Health & Nutrition", href: "/poor-needy" },
+        { label: "Stop Child Labour", href: "/poor-needy" },
+        { label: "Support Girl Child Education", href: "/poor-needy" },
+        { label: "Stop Child Marriage", href: "/poor-needy" },
+        { label: "Prevent Child Trafficking", href: "/poor-needy" },
+        { label: "STEM Education", href: "/poor-needy" },
+      ],
+    },
+    {
+      label: "Get Involved",
+      items: [
+        { label: t("nav.volunteer"), href: "/volunteer" },
+        { label: t("nav.collaborate"), href: "/collaborate" },
+        { label: t("nav.donate_now"), href: "/donate" },
+      ],
+    },
+    {
+      label: "Resources",
+      items: [
+        { label: t("nav.wall_of_fame"), href: "/wall-of-fame" },
+        { label: t("nav.donations_made"), href: "/donations-made" },
+      ],
     },
   ];
 
@@ -153,62 +169,60 @@ const Navbar = () => {
 
           {/* Desktop Nav */}
           <div className="hidden lg:flex items-center space-x-1">
-            <div className="flex items-center space-x-4 mr-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  to={link.href}
-                  data-animation="nav-link"
-                  className={`font-medium transition-colors text-sm rounded px-3 py-2 focus:outline-none ${
-                    isActive(link.href)
-                      ? "text-[#B71C1C] bg-red-50/50"
-                      : "text-[#4A4A4A] hover:text-[#B71C1C] hover:bg-gray-50"
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <div className="flex items-center space-x-1 mr-4">
+              {navStructure.map((item) => {
+                if (!item.items) {
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.href}
+                      data-animation="nav-link"
+                      className={`font-medium transition-colors text-[15px] rounded px-3 py-2 focus:outline-none ${
+                        isActive(item.href)
+                          ? "text-[#B71C1C] bg-red-50/50"
+                          : "text-[#4A4A4A] hover:text-[#B71C1C] hover:bg-gray-50"
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
 
-              <div
-                className="relative"
-                onMouseEnter={() => setIsMoreOpen(true)}
-                onMouseLeave={() => setIsMoreOpen(false)}
-              >
-                <button
-                  className={`font-medium flex items-center text-sm px-3 py-2 rounded transition-colors ${
-                    dropdownLinks.some((link) => isActive(link.href))
-                      ? "text-[#B71C1C] bg-red-50/50"
-                      : "text-[#4A4A4A] hover:text-[#B71C1C] hover:bg-gray-50"
-                  }`}
-                  data-animation="nav-link"
-                >
-                  {t("nav.more")}{" "}
-                  <FaChevronDown className="ml-1.5 text-[10px] opacity-50" />
-                </button>
-                {isMoreOpen && (
-                  <div className="absolute top-full left-0 w-48 bg-white shadow-xl border-t-4 border-[#B71C1C] py-2 animate-fade-in rounded-b-xl">
-                    {dropdownLinks.map((link) =>
-                      link.onClick ? (
-                        <button
-                          key={link.label}
-                          onClick={link.onClick}
-                          className="w-full text-left block px-4 py-3 text-sm text-[#4A4A4A] hover:bg-gray-50 hover:text-[#B71C1C] transition-colors focus:outline-none"
-                        >
-                          {link.label}
-                        </button>
-                      ) : (
-                        <Link
-                          key={link.label}
-                          to={link.href}
-                          className="block px-4 py-3 text-sm text-[#4A4A4A] hover:bg-gray-50 hover:text-[#B71C1C] transition-colors focus:outline-none"
-                        >
-                          {link.label}
-                        </Link>
-                      )
+                const groupActive = item.items.some((link) => isActive(link.href));
+                return (
+                  <div
+                    key={item.label}
+                    className="relative"
+                    onMouseEnter={() => setOpenDropdown(item.label)}
+                    onMouseLeave={() => setOpenDropdown(null)}
+                  >
+                    <button
+                      className={`font-medium flex items-center text-[15px] px-3 py-2 rounded transition-colors ${
+                        groupActive
+                          ? "text-[#B71C1C] bg-red-50/50"
+                          : "text-[#4A4A4A] hover:text-[#B71C1C] hover:bg-gray-50"
+                      }`}
+                      data-animation="nav-link"
+                    >
+                      {item.label}
+                      <FaChevronDown className="ml-1.5 text-[10px] opacity-60" />
+                    </button>
+                    {openDropdown === item.label && (
+                      <div className="absolute top-full left-0 min-w-[260px] bg-[#EFEFEF] shadow-lg border border-gray-200 py-2 rounded-b-md">
+                        {item.items.map((link) => (
+                          <Link
+                            key={link.label}
+                            to={link.href}
+                            className="block px-4 py-2.5 text-[17px] text-[#4A4A4A] hover:bg-white/70 hover:text-[#B71C1C] transition-colors focus:outline-none"
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+                );
+              })}
             </div>
 
             <div className="flex items-center space-x-3 border-l pl-4 border-gray-100">
@@ -280,47 +294,37 @@ const Navbar = () => {
           data-animation="mobile-menu"
         >
           <div className="px-4 pt-4 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className="block px-4 py-4 text-lg font-medium text-[#4A4A4A] hover:bg-gray-50 border-b border-gray-100 rounded-lg transition-colors"
-                onClick={() => setIsOpen(false)}
-                data-animation="mobile-link"
-              >
-                {link.label}
-              </Link>
-            ))}
-            <div className="pt-6 px-4">
-              <p className="text-xs uppercase text-[#9E9E9E] font-bold tracking-widest mb-4">
-                {t("nav.more_services")}
-              </p>
-              <div className="grid grid-cols-1 gap-1">
-                {dropdownLinks.map((link) =>
-                  link.onClick ? (
-                    <button
-                      key={link.label}
-                      onClick={(e) => {
-                        link.onClick(e);
-                        setIsOpen(false);
-                      }}
-                      className="block py-3 text-base font-medium text-[#4A4A4A] text-left hover:bg-gray-50 rounded-lg px-4"
-                    >
-                      {link.label}
-                    </button>
-                  ) : (
-                    <Link
-                      key={link.label}
-                      to={link.href}
-                      className="block py-3 text-base font-medium text-[#4A4A4A] hover:bg-gray-50 rounded-lg px-4"
-                      onClick={() => setIsOpen(false)}
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                )}
-              </div>
-            </div>
+            {navStructure.map((item) =>
+              item.items ? (
+                <div key={item.label} className="pt-4 px-4">
+                  <p className="text-xs uppercase text-[#9E9E9E] font-bold tracking-widest mb-2">
+                    {item.label}
+                  </p>
+                  <div className="grid grid-cols-1 gap-1">
+                    {item.items.map((link) => (
+                      <Link
+                        key={link.label}
+                        to={link.href}
+                        className="block py-3 text-base font-medium text-[#4A4A4A] hover:bg-gray-50 rounded-lg px-4"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={item.label}
+                  to={item.href}
+                  className="block px-4 py-4 text-lg font-medium text-[#4A4A4A] hover:bg-gray-50 border-b border-gray-100 rounded-lg transition-colors"
+                  onClick={() => setIsOpen(false)}
+                  data-animation="mobile-link"
+                >
+                  {item.label}
+                </Link>
+              )
+            )}
             <div className="flex flex-col space-y-3 pt-10 px-4">
               <Link to="/request-donors" onClick={() => setIsOpen(false)}>
                 <Button
