@@ -76,8 +76,9 @@ const ResetPassword = () => {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div className="relative">
-              <label className="block text-sm font-medium text-text-body mb-1">New Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-text-body mb-1">New Password</label>
               <input
+                id="password"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 required
@@ -96,8 +97,9 @@ const ResetPassword = () => {
               </button>
             </div>
             <div>
-              <label className="block text-sm font-medium text-text-body mb-1">Confirm New Password</label>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-text-body mb-1">Confirm New Password</label>
               <input
+                id="confirmPassword"
                 name="confirmPassword"
                 type={showPassword ? "text" : "password"}
                 required

@@ -11,6 +11,7 @@ import galleryRoutes from "./routes/galleryRoutes.js";
 import volunteerRoutes from "./routes/volunteerRoutes.js";
 import idCardRoutes from "./routes/idCardRoutes.js";
 import emailUploadRoutes from "./routes/emailUploadRoutes.js";
+import carouselRoutes from "./routes/carouselRoutes.js";
 import { initAdmin } from "./controllers/authController.js";
 import { initBirthdayCron } from "./utils/birthdayCron.js";
 
@@ -64,6 +65,7 @@ app.use("/api/gallery", galleryRoutes);
 app.use("/api/volunteers", volunteerRoutes);
 app.use("/api/id-card", idCardRoutes);
 app.use("/api/email", emailUploadRoutes);
+app.use("/api/carousel", carouselRoutes);
 app.use("/api", emailRoutes);
 
 const PORT = process.env.PORT || 5000;

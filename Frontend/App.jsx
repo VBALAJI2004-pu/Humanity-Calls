@@ -106,8 +106,10 @@ const AppContent = () => {
               <Route path="send-mails" element={<EmailManager />} />
               <Route path="add-gallery" element={<AddGalleryManager />} />
             </Route>
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
             <Route path="/verify/:volunteerId" element={<Verify />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </main>

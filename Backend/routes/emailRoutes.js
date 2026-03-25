@@ -1,5 +1,5 @@
 import express from "express";
-import { sendEmail, sendMassEmail, getMassMailHistory } from "../controllers/emailController.js";
+import { sendEmail, sendMassEmail, getMassMailHistory, getAllPotentialRecipients } from "../controllers/emailController.js";
 import { checkAndSendBirthdayEmails } from "../utils/birthdayCron.js";
 import rateLimit from "express-rate-limit";
 import { protect } from "../middleware/auth.js";
@@ -16,6 +16,11 @@ router.get("/mass-mail-history", protect, (req, res, next) => {
   if (req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
   next();
 }, getMassMailHistory);
+
+router.get("/all-potential-recipients", protect, (req, res, next) => {
+  if (req.user.role !== "admin") return res.status(403).json({ message: "Forbidden" });
+  next();
+}, getAllPotentialRecipients);
 
 // Rate limiting: 1 request per 30 seconds per IP
 const contactEmailLimiter = rateLimit({

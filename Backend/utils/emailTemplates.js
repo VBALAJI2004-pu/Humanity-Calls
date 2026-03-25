@@ -156,7 +156,8 @@ export const volunteerApprovalTemplate = (vol, frontendUrl) => {
         <div style="width:72px;height:72px;background:#E8F5E9;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:36px;line-height:72px;">
           🎉
         </div>
-        <h2 style="margin:0;color:#1A1A2E;font-size:28px;font-weight:900;line-height:1.2;">Congratulations, ${vol.fullName}!</h2>
+        <h2 style="margin:0;color:#1A1A2E;font-size:28px;font-weight:900;line-height:1.2;">Congratulations!</h2>
+        <p style="margin:16px 0 0;color:#C62828;font-size:18px;font-weight:700;">Dear ${vol.fullName},</p>
         <p style="color:#555;font-size:16px;line-height:1.7;margin:14px 0 0;">
           You have been <strong style="color:#2E7D32;">approved as a Volunteer</strong> at Humanity Calls Trust. 
           We are thrilled to have you on board and look forward to working with you!
@@ -251,9 +252,9 @@ export const birthdayWishTemplate = (volunteerName) => {
     <tr>
       <td style="padding:40px 32px 40px;">
         <div style="color:#333333;font-size:16px;line-height:1.6;">
-          <p>Dear <strong>${volunteerName}</strong>,</p>
+          <p style="margin-top:0;">Warm Birthday Wishes to you! 🎂</p>
           
-          <p>Warm Birthday Wishes to you! 🎂</p>
+          <p>Dear <strong>${volunteerName}</strong>,</p>
           
           <p>On behalf of <strong>Humanity Calls</strong>, we sincerely thank you for the time, compassion, and dedication you bring in creating a positive change in society. Your efforts truly reflect the spirit of humanity, and your contribution continues to inspire many.</p>
           
@@ -291,9 +292,9 @@ export const genericMassEmailTemplate = (name, heading, body, bannerImage) => {
     <tr>
       <td style="padding:40px 32px 40px;">
         <div style="color:#333333;font-size:16px;line-height:1.6;">
-          <p style="margin-top:0;">Dear <strong>${name}</strong>,</p>
+          <h2 style="margin:0 0 16px;color:#1A1A2E;font-size:24px;font-weight:900;line-height:1.3;letter-spacing:-0.02em;">${heading}</h2>
           
-          <h2 style="margin:24px 0 16px;color:#1A1A2E;font-size:24px;font-weight:900;line-height:1.3;letter-spacing:-0.02em;">${heading}</h2>
+          <p style="margin:0 0 24px;">Dear <strong>${name}</strong>,</p>
           
           <div style="margin-bottom:32px;color:#444444;">
             ${body}

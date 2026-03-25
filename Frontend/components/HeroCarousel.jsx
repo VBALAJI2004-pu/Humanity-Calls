@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-const HERO_IMAGES = [
+const FALLBACK_IMAGES = [
   "https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_60,w_800,c_limit/v1768556077/landing_page3_dlrxfk.jpg",
   "https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_1200,c_limit/v1768555729/landing_page4_yjkb6r.png",
   "https://res.cloudinary.com/daokrum7i/image/upload/f_auto,q_auto,w_1200,c_limit/v1768555360/landing_page2_inavn7.webp",
@@ -12,8 +13,30 @@ const HERO_IMAGES = [
 ];
 
 const HeroCarousel = () => {
+  const [images, setImages] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showSlider, setShowSlider] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_API_URL}/carousel`);
+        if (response.data && response.data.length > 0) {
+          setImages(response.data.map(img => img.imageUrl));
+        } else {
+          setImages(FALLBACK_IMAGES);
+        }
+      } catch (err) {
+        console.error("Failed to fetch carousel images:", err);
+        setImages(FALLBACK_IMAGES);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchImages();
+  }, []);
 
   useEffect(() => {
     // Delay slider activation to prioritize LCP image
@@ -22,13 +45,21 @@ const HeroCarousel = () => {
   }, []);
 
   useEffect(() => {
-    if (!showSlider) return;
+    if (!showSlider || images.length === 0) return;
 
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % HERO_IMAGES.length);
-    }, 4000); // Increased interval slightly for better UX
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 4000);
     return () => clearInterval(interval);
-  }, [showSlider]);
+  }, [showSlider, images.length]);
+
+  if (isLoading || images.length === 0) {
+    return (
+      <div className="absolute inset-0 w-full h-full bg-black/20 animate-pulse flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -39,7 +70,7 @@ const HeroCarousel = () => {
         }`}
       >
         <img
-          src={HERO_IMAGES[0]}
+          src={images[0]}
           alt="Slide 1"
           className="w-full h-full object-cover"
           loading="eager"
@@ -53,7 +84,7 @@ const HeroCarousel = () => {
 
       {/* Subsequent images loaded only after slider activation */}
       {showSlider &&
-        HERO_IMAGES.slice(1).map((image, index) => {
+        images.slice(1).map((image, index) => {
           const actualIndex = index + 1;
           return (
             <div

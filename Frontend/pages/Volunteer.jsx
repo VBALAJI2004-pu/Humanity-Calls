@@ -8,7 +8,7 @@ import withFormAuth from "../components/withFormAuth";
 import ProfilePictureCropper from "../components/ProfilePictureCropper";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { FaCheckCircle, FaTimes, FaCamera, FaInfoCircle, FaPen } from "react-icons/fa";
+import { FaCheckCircle, FaTimes, FaCamera, FaInfoCircle, FaPen, FaShareAlt } from "react-icons/fa";
 import hclogo from "../assets/humanitycallslogo.avif";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -414,6 +414,30 @@ const Volunteer = ({
     "Other",
   ];
   const bloodGroups = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+  
+  const handleShare = async () => {
+    const shareData = {
+      title: "Become a Volunteer | Humanity Calls",
+      text: "Join Humanity Calls as a volunteer and contribute to building a better world. Register here!",
+      url: `https://humanitycalls.org/volunteer`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.info("Link copied to clipboard!");
+      }
+    } catch (err) {
+      if (err.name !== "AbortError") {
+        console.error("Error sharing:", err);
+        // Fallback for desktop/non-compatible browsers
+        navigator.clipboard.writeText(shareData.url);
+        toast.info("Link copied to clipboard!");
+      }
+    }
+  };
 
   return (
     <div className="bg-white min-h-screen py-24" ref={containerRef}>
@@ -424,7 +448,7 @@ const Volunteer = ({
 
       <div className="max-w-none mx-auto px-[5%] grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
         <div data-animation="vol-title">
-          <h1 className="text-4xl font-bold text-[#1A1A1A] mb-8">
+          <h1 className="text-4xl font-bold text-[#1A1A1A] mb-8 flex items-center justify-between gap-4">
             {t("volunteer.title")}
           </h1>
           <p className="text-xl text-gray-600 leading-relaxed mb-12">
@@ -441,9 +465,16 @@ const Volunteer = ({
         </div>
 
         <div
-          className="bg-white p-8 md:p-12 rounded-3xl border border-border shadow-xl"
+          className="relative bg-white p-8 md:p-12 rounded-3xl border border-border shadow-xl"
           data-animation="vol-form"
         >
+          <button
+            onClick={handleShare}
+            className="absolute top-6 right-6 p-3 bg-primary/10 text-primary rounded-2xl hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/20 group z-10 active:scale-90"
+            title="Share registration form"
+          >
+            <FaShareAlt size={20} className="group-hover:rotate-12 transition-transform" />
+          </button>
           {isCheckingStatus ? (
             <div className="flex flex-col items-center justify-center py-12 gap-4">
               <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
@@ -472,7 +503,7 @@ const Volunteer = ({
                 <Button onClick={() => window.location.href = '/'} className="w-full mt-4">Back to Home</Button>
               )}
             </div>
-          ) : !user?.isVerified ? (
+          ) : user && !user?.isVerified ? (
             <div className="text-center py-8 space-y-6">
               <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FaInfoCircle size={40} />
@@ -488,11 +519,13 @@ const Volunteer = ({
             </div>
           ) : (
             <>
-              <div className="flex justify-between items-center mb-8">
-                <h3 className="text-2xl font-bold text-primary">
-                  {t("volunteer.form_title")}
-                </h3>
-                <span className="bg-blood/10 text-blood text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-blood/20 animate-pulse">
+              <div className="flex justify-between items-center mb-8 gap-4 mr-8">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-2xl font-bold text-primary">
+                    {t("volunteer.form_title")}
+                  </h3>
+                </div>
+                <span className="bg-blood/10 text-blood text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border border-blood/20 animate-pulse whitespace-nowrap">
                   18+ Years Only
                 </span>
               </div>
@@ -533,7 +566,7 @@ const Volunteer = ({
                     Profile Picture *
                   </label>
                   <div className="flex items-center gap-4">
-                    <div className="relative group flex-shrink-0">
+                    <div className="relative group shrink-0">
                       <input
                         type="file"
                         accept="image/*"
@@ -955,7 +988,7 @@ const Volunteer = ({
 
       {/* Success Popup */}
       {showSuccessPopup && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-[#f0f9f1] rounded-3xl p-10 max-w-md w-full relative shadow-2xl border border-green-100 text-center animate-in zoom-in-95 duration-300">
             <button
               onClick={() => setShowSuccessPopup(false)}
@@ -990,7 +1023,7 @@ const Volunteer = ({
 
       {/* Terms and Conditions Modal */}
       {showTerms && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-8 duration-300">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-xl font-bold text-gray-800 uppercase tracking-tight">

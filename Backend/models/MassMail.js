@@ -19,7 +19,7 @@ const massMailSchema = new mongoose.Schema({
   },
   recipients: {
     type: [String],
-    enum: ["active_volunteers", "temporary_volunteers", "users", "all"],
+    enum: ["active_volunteers", "temporary_volunteers", "users", "all", "individual_volunteers", "individual_users"],
     required: true,
   },
   sentCount: {

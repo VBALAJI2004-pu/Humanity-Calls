@@ -92,12 +92,9 @@ const EmailPreviewContent = ({ name, heading, body, bannerImage }) => {
             lineHeight: "1.6",
           }}
         >
-          <p style={{ marginTop: 0 }}>
-            Dear <strong>{name}</strong>,
-          </p>
           <h2
             style={{
-              margin: "20px 0 14px",
+              margin: "0 0 16px",
               color: "#1A1A2E",
               fontSize: "22px",
               fontWeight: "900",
@@ -106,6 +103,9 @@ const EmailPreviewContent = ({ name, heading, body, bannerImage }) => {
           >
             {heading}
           </h2>
+          <p style={{ margin: "0 0 24px" }}>
+            Dear <strong>{name}</strong>,
+          </p>
           <div dangerouslySetInnerHTML={{ __html: sanitizedBody }} />
           <div
             style={{
@@ -185,9 +185,34 @@ const EmailManager = () => {
   const [isSendingMail, setIsSendingMail] = useState(false);
   const [isLoadingMailHistory, setIsLoadingMailHistory] = useState(false);
 
+  // New States for individual selection
+  const [potentialRecipients, setPotentialRecipients] = useState({ volunteers: [], users: [] });
+  const [selectedIndividualVolunteers, setSelectedIndividualVolunteers] = useState([]);
+  const [selectedIndividualUsers, setSelectedIndividualUsers] = useState([]);
+  const [isLoadingRecipients, setIsLoadingRecipients] = useState(false);
+  const [recipientSearchQuery, setRecipientSearchQuery] = useState("");
+  const [showIndividualSelection, setShowIndividualSelection] = useState(null); // 'vol' or 'user'
+
   useEffect(() => {
     fetchMailHistory();
+    fetchPotentialRecipients();
   }, []);
+
+  const fetchPotentialRecipients = async () => {
+    setIsLoadingRecipients(true);
+    try {
+      const token = sessionStorage.getItem("adminToken");
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_URL}/all-potential-recipients`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPotentialRecipients(response.data);
+    } catch (err) {
+      console.error("Failed to fetch potential recipients", err);
+    } finally {
+      setIsLoadingRecipients(false);
+    }
+  };
 
   const fetchMailHistory = async () => {
     setIsLoadingMailHistory(true);
@@ -234,8 +259,8 @@ const EmailManager = () => {
 
   const handleSendMassEmail = async (e) => {
     e.preventDefault();
-    if (selectedRecipientGroups.length === 0) {
-      toast.error("Please select at least one recipient group");
+    if (selectedRecipientGroups.length === 0 && selectedIndividualVolunteers.length === 0 && selectedIndividualUsers.length === 0) {
+      toast.error("Please select at least one recipient or group");
       return;
     }
     setIsSendingMail(true);
@@ -249,6 +274,8 @@ const EmailManager = () => {
           body: mailBody,
           bannerImage: mailBanner,
           selectedGroups: selectedRecipientGroups,
+          selectedIndividualVolunteers,
+          selectedIndividualUsers
         },
         { headers: { Authorization: `Bearer ${token}` } },
       );
@@ -258,6 +285,8 @@ const EmailManager = () => {
       setMailBody("");
       setMailBanner("");
       setSelectedRecipientGroups([]);
+      setSelectedIndividualVolunteers([]);
+      setSelectedIndividualUsers([]);
       fetchMailHistory();
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to send mass email");
@@ -299,7 +328,7 @@ const EmailManager = () => {
 
   return (
     <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      <div className="bg-white rounded-[2.5rem] shadow-2xl border border-border/50 overflow-hidden">
+      <div className="bg-white rounded-4xl shadow-2xl border border-border/50 overflow-hidden">
         <div className="bg-primary/5 px-8 pt-10 pb-8 border-b border-border/50 flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <h2 className="text-3xl font-black text-primary tracking-tighter flex items-center gap-4">
@@ -442,45 +471,208 @@ const EmailManager = () => {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-6">
               <label className="text-xs font-black uppercase tracking-[0.2em] text-text-body/40">
                 Target Audience
               </label>
-              <div className="flex flex-wrap gap-3">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
-                  { id: "active_volunteers", label: "Active Team" },
-                  { id: "temporary_volunteers", label: "Temp Support" },
-                  { id: "users", label: "Signed-up Users" },
-                  { id: "all", label: "Everyone" },
+                  { id: "active_volunteers", label: "Active Team", sub: "Individual Selection Available", type: "vol" },
+                  { id: "temporary_volunteers", label: "Temp Support", sub: "Individual Selection Available", type: "vol" },
+                  { id: "users", label: "Signed-up Users", sub: "Individual Selection Available", type: "user" },
+                  { id: "all", label: "Everyone", sub: "Full Broadcast", type: "all" },
                 ].map((group) => (
-                  <button
-                    key={group.id}
-                    type="button"
-                    onClick={() => toggleRecipientGroup(group.id)}
-                    className={`px-5 py-3 rounded-2xl font-bold border-2 transition-all flex items-center gap-3 ${
-                      selectedRecipientGroups.includes(group.id)
-                        ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-105"
-                        : "bg-white text-text-body/60 border-border hover:border-primary/30"
-                    }`}
-                  >
-                    {selectedRecipientGroups.includes(group.id) ? (
-                      <div className="bg-white rounded-full p-0.5 text-primary">
-                        <FaCheck size={10} />
+                  <div key={group.id} className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleRecipientGroup(group.id)}
+                      className={`w-full p-4 rounded-2xl font-bold border-2 transition-all flex items-center justify-between ${
+                        selectedRecipientGroups.includes(group.id)
+                          ? "bg-primary text-white border-primary shadow-lg scale-[1.02]"
+                          : "bg-white text-text-body/60 border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {selectedRecipientGroups.includes(group.id) ? (
+                          <div className="bg-white rounded-full p-0.5 text-primary">
+                            <FaCheck size={12} />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-border" />
+                        )}
+                        <div className="text-left">
+                          <p className="text-sm leading-tight">{group.label}</p>
+                          <p className={`text-[10px] uppercase tracking-wider opacity-60 ${selectedRecipientGroups.includes(group.id) ? 'text-white' : 'text-primary'}`}>
+                            {group.sub}
+                          </p>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="w-4 h-4 rounded-full border border-border" />
+                    </button>
+                    
+                    {group.type !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setShowIndividualSelection(showIndividualSelection === group.id ? null : group.id)}
+                        className={`w-full text-[11px] font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 py-2 rounded-xl transition-all ${
+                          showIndividualSelection === group.id 
+                            ? "text-blood bg-blood/5" 
+                            : "text-primary/40 hover:text-primary hover:bg-primary/5"
+                        }`}
+                      >
+                        {showIndividualSelection === group.id ? <FaTimes /> : <FaPlusCircle />}
+                        {showIndividualSelection === group.id ? "Hide Individuals" : "Select Individuals"}
+                        {(group.type === 'vol' ? selectedIndividualVolunteers : selectedIndividualUsers).filter(id => {
+                          const item = (group.type === 'vol' ? potentialRecipients.volunteers : potentialRecipients.users).find(p => p.id === id);
+                          return group.id === 'users' ? item?.type === 'user' : item?.type === group.id.replace('s', ''); 
+                        }).length > 0 && (
+                          <span className="bg-primary text-white w-5 h-5 rounded-full flex items-center justify-center text-[9px]">
+                            {(group.type === 'vol' ? selectedIndividualVolunteers : selectedIndividualUsers).filter(id => {
+                              const item = (group.type === 'vol' ? potentialRecipients.volunteers : potentialRecipients.users).find(p => p.id === id);
+                              if (group.id === 'users') return item?.type === 'user';
+                              if (group.id === 'active_volunteers') return item?.type === 'active_vol';
+                              if (group.id === 'temporary_volunteers') return item?.type === 'temp_vol';
+                              return false;
+                            }).length}
+                          </span>
+                        )}
+                      </button>
                     )}
-                    {group.label}
-                  </button>
+                  </div>
                 ))}
               </div>
+
+              {/* Individual Selection Panel */}
+              {showIndividualSelection && (
+                <div className="bg-bg/40 rounded-3xl border border-border p-6 space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="relative flex-grow w-full">
+                      <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-text-body/30" />
+                      <input
+                        type="text"
+                        placeholder={`Search ${showIndividualSelection.replace('_', ' ')}...`}
+                        value={recipientSearchQuery}
+                        onChange={(e) => setRecipientSearchQuery(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3 bg-white border border-border rounded-xl focus:border-primary outline-none transition-all text-sm font-bold"
+                      />
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => {
+                          const filtered = (showIndividualSelection === 'users' ? potentialRecipients.users : potentialRecipients.volunteers)
+                            .filter(p => showIndividualSelection === 'users' ? true : p.type === showIndividualSelection.replace('s', ''))
+                            .map(p => p.id);
+                          
+                          if (showIndividualSelection === 'users') {
+                            setSelectedIndividualUsers(prev => [...new Set([...prev, ...filtered])]);
+                          } else {
+                            setSelectedIndividualVolunteers(prev => [...new Set([...prev, ...filtered])]);
+                          }
+                        }}
+                        className="grow sm:flex-none px-4 py-2 bg-primary/10 text-primary rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-primary hover:text-white transition-all"
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (showIndividualSelection === 'users') {
+                            setSelectedIndividualUsers([]);
+                          } else {
+                            const filteredOut = (showIndividualSelection === 'active_volunteers' ? 'active_vol' : 'temp_vol');
+                            setSelectedIndividualVolunteers(prev => prev.filter(id => potentialRecipients.volunteers.find(v => v.id === id)?.type !== filteredOut));
+                          }
+                        }}
+                        className="grow sm:flex-none px-4 py-2 bg-blood/10 text-blood rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-blood hover:text-white transition-all"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    {isLoadingRecipients ? (
+                      <div className="py-10 text-center">
+                        <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin mx-auto mb-2" />
+                        <p className="text-[10px] font-black text-primary/40 uppercase tracking-widest">Loading Records...</p>
+                      </div>
+                    ) : (showIndividualSelection === 'users' ? potentialRecipients.users : potentialRecipients.volunteers)
+                        .filter(p => {
+                          if (showIndividualSelection === 'users') return true;
+                          if (showIndividualSelection === 'active_volunteers') return p.type === 'active_vol';
+                          if (showIndividualSelection === 'temporary_volunteers') return p.type === 'temp_vol';
+                          return false;
+                        })
+                        .filter(p => 
+                          p.name.toLowerCase().includes(recipientSearchQuery.toLowerCase()) || 
+                          p.email.toLowerCase().includes(recipientSearchQuery.toLowerCase()) ||
+                          (p.displayId && p.displayId.toLowerCase().includes(recipientSearchQuery.toLowerCase()))
+                        )
+                        .map(p => {
+                          const isSelected = (p.type === 'user' ? selectedIndividualUsers : selectedIndividualVolunteers).includes(p.id);
+                          return (
+                            <div 
+                              key={p.id}
+                              onClick={() => {
+                                if (p.type === 'user') {
+                                  setSelectedIndividualUsers(prev => isSelected ? prev.filter(id => id !== p.id) : [...prev, p.id]);
+                                } else {
+                                  setSelectedIndividualVolunteers(prev => isSelected ? prev.filter(id => id !== p.id) : [...prev, p.id]);
+                                }
+                              }}
+                              className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                                isSelected 
+                                  ? "bg-primary/5 border-primary/30" 
+                                  : "bg-white border-transparent hover:border-primary/20"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                                  isSelected ? "bg-primary border-primary text-white" : "border-border bg-gray-50 text-transparent"
+                                }`}>
+                                  <FaCheck size={10} />
+                                </div>
+                                <div className="text-left">
+                                  <div className="flex items-center gap-2">
+                                    <p className="font-bold text-sm text-primary">{p.name}</p>
+                                    {p.displayId && (
+                                      <span className="bg-primary/10 text-primary text-[9px] font-black px-1.5 py-0.5 rounded leading-none">
+                                        {p.displayId}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-[11px] text-text-body/40 font-medium">{p.email}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    
+                    {(showIndividualSelection === 'users' ? potentialRecipients.users : potentialRecipients.volunteers)
+                        .filter(p => {
+                          if (showIndividualSelection === 'users') return true;
+                          if (showIndividualSelection === 'active_volunteers') return p.type === 'active_vol';
+                          if (showIndividualSelection === 'temporary_volunteers') return p.type === 'temp_vol';
+                          return false;
+                        })
+                        .filter(p => 
+                          p.name.toLowerCase().includes(recipientSearchQuery.toLowerCase()) || 
+                          p.email.toLowerCase().includes(recipientSearchQuery.toLowerCase()) ||
+                          (p.displayId && p.displayId.toLowerCase().includes(recipientSearchQuery.toLowerCase()))
+                        ).length === 0 && !isLoadingRecipients && (
+                      <div className="py-12 text-center text-text-body/30 italic text-sm">
+                        No matches found for "{recipientSearchQuery}"
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={isSendingMail || !mailSubject || !mailBody}
               onClick={handleSendMassEmail}
-              className="w-full bg-primary text-white font-black py-6 rounded-[2rem] hover:bg-primary/90 transition-all shadow-2xl shadow-primary/30 active:scale-[0.98] uppercase tracking-[0.2em] text-xl disabled:opacity-40 flex items-center justify-center gap-4"
+              className="w-full bg-primary text-white font-black py-6 rounded-4xl transition-all shadow-2xl shadow-primary/30 active:scale-[0.98] uppercase tracking-[0.2em] text-xl disabled:opacity-40 flex items-center justify-center gap-4"
             >
               {isSendingMail ? "DISPATCHING..." : "DISPATCH EMAIL"}
             </button>
@@ -501,7 +693,7 @@ const EmailManager = () => {
                       <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
                       <div className="w-3 h-3 rounded-full bg-[#28C840]" />
                     </div>
-                    <div className="bg-white px-4 py-1.5 rounded-lg text-xs text-text-body/40 flex-grow truncate mx-2 font-medium">
+                    <div className="bg-white px-4 py-1.5 rounded-lg text-xs text-text-body/40 grow truncate mx-2 font-medium">
                       {mailSubject || "New Message"}
                     </div>
                   </div>

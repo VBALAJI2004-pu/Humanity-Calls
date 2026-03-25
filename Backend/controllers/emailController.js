@@ -30,35 +30,67 @@ const getBrevoClient = () => {
  * Send mass email to selected groups
  */
 export const sendMassEmail = async (req, res) => {
-  const { subject, heading, body, bannerImage, selectedGroups } = req.body;
+  const { 
+    subject, 
+    heading, 
+    body, 
+    bannerImage, 
+    selectedGroups, 
+    selectedIndividualVolunteers = [], 
+    selectedIndividualUsers = [] 
+  } = req.body;
 
-  if (!subject || !heading || !body || !selectedGroups || selectedGroups.length === 0) {
-    return res.status(400).json({ message: "Missing required fields" });
+  if (!subject || !heading || !body || (!selectedGroups?.length && !selectedIndividualVolunteers?.length && !selectedIndividualUsers?.length)) {
+    return res.status(400).json({ message: "Missing required fields or recipients" });
   }
 
   try {
     let recipientEmails = new Map(); // Use Map to store {email: name} and avoid duplicates
 
-    // Fetch recipients based on selected groups
-    if (selectedGroups.includes("all") || selectedGroups.includes("active_volunteers")) {
-      const activeVols = await Volunteer.find({ status: "active" }).select("email fullName");
+    // 1. Fetch by Selected Groups
+    if (selectedGroups.includes("all")) {
+      // All active, temporary, and users
+      const [activeVols, tempVols, users] = await Promise.all([
+        Volunteer.find({ status: "active" }).select("email fullName"),
+        Volunteer.find({ status: "temporary" }).select("email fullName"),
+        User.find({ role: "user" }).select("email name")
+      ]);
       activeVols.forEach(v => recipientEmails.set(v.email, v.fullName));
-    }
-
-    if (selectedGroups.includes("all") || selectedGroups.includes("temporary_volunteers")) {
-      const tempVols = await Volunteer.find({ status: "temporary" }).select("email fullName");
       tempVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+      users.forEach(u => recipientEmails.set(u.email, u.name));
+    } else {
+      if (selectedGroups.includes("active_volunteers")) {
+        const activeVols = await Volunteer.find({ status: "active" }).select("email fullName");
+        activeVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+      }
+
+      if (selectedGroups.includes("temporary_volunteers")) {
+        const tempVols = await Volunteer.find({ status: "temporary" }).select("email fullName");
+        tempVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+      }
+
+      if (selectedGroups.includes("users")) {
+        const users = await User.find({ role: "user" }).select("email name");
+        users.forEach(u => recipientEmails.set(u.email, u.name));
+      }
     }
 
-    if (selectedGroups.includes("all") || selectedGroups.includes("users")) {
-      const users = await User.find({ role: "user" }).select("email name");
-      users.forEach(u => recipientEmails.set(u.email, u.name));
+    // 2. Fetch Individual Volunteers
+    if (selectedIndividualVolunteers.length > 0) {
+      const individualVols = await Volunteer.find({ _id: { $in: selectedIndividualVolunteers } }).select("email fullName");
+      individualVols.forEach(v => recipientEmails.set(v.email, v.fullName));
+    }
+
+    // 3. Fetch Individual Users
+    if (selectedIndividualUsers.length > 0) {
+      const individualUsers = await User.find({ _id: { $in: selectedIndividualUsers } }).select("email name");
+      individualUsers.forEach(u => recipientEmails.set(u.email, u.name));
     }
 
     const recipientsArray = Array.from(recipientEmails.entries()).map(([email, name]) => ({ email, name }));
 
     if (recipientsArray.length === 0) {
-      return res.status(404).json({ message: "No recipients found for the selected groups" });
+      return res.status(404).json({ message: "No recipients found for the selection" });
     }
 
     // Save history record
@@ -67,23 +99,53 @@ export const sendMassEmail = async (req, res) => {
       heading,
       body,
       bannerImage,
-      recipients: selectedGroups,
+      recipients: [
+        ...(selectedGroups || []),
+        ...(selectedIndividualVolunteers.length > 0 ? ["individual_volunteers"] : []),
+        ...(selectedIndividualUsers.length > 0 ? ["individual_users"] : [])
+      ],
       sentCount: recipientsArray.length,
       admin: req.user._id,
     });
 
-    // Send immediate response
     res.status(200).json({ 
       message: `Mass email initiated for ${recipientsArray.length} recipients`,
       recordId: massMailRecord._id 
     });
 
-    // Process sending in background (fire-and-forget with chunking)
     processMassEmails(recipientsArray, subject, heading, body, bannerImage);
 
   } catch (error) {
     console.error("Mass Email Error:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Get all potential recipients (volunteers and users) for individual selection
+ */
+export const getAllPotentialRecipients = async (req, res) => {
+  try {
+    const [activeVols, tempVols, users] = await Promise.all([
+      Volunteer.find({ status: "active" }).select("fullName email volunteerId"),
+      Volunteer.find({ status: "temporary" }).select("fullName email volunteerId"),
+      User.find({ role: "user" }).select("name email")
+    ]);
+
+    const formattedVols = [
+      ...activeVols.map(v => ({ id: v._id, name: v.fullName, email: v.email, displayId: v.volunteerId, type: "active_vol" })),
+      ...tempVols.map(v => ({ id: v._id, name: v.fullName, email: v.email, displayId: v.volunteerId, type: "temp_vol" }))
+    ];
+
+    const formattedUsers = users.map(u => ({ id: u._id, name: u.name, email: u.email, type: "user" }));
+
+    res.json({
+      volunteers: formattedVols,
+      users: formattedUsers
+    });
+  } catch (error) {
+    console.error("Get Potential Recipients Error:", error);
+    res.status(500).json({ message: "Failed to fetch recipients" });
   }
 };
 
