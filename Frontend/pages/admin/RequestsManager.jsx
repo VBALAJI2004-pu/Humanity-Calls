@@ -59,7 +59,7 @@ const RequestsManager = () => {
   };
 
   const handleVolunteerStatus = async (id, status, isTemporary = false) => {
-    if (status === "approved" && !isSubmittingApproval) {
+    if ((status === "active" || status === "temporary") && !isSubmittingApproval) {
       setIsSubmittingApproval(true);
     }
     try {
@@ -433,7 +433,7 @@ const RequestsManager = () => {
               <div className="flex gap-4">
                 <button onClick={() => setShowPreApprovePopup(false)} className="flex-1 py-5 rounded-2xl font-bold bg-bg hover:bg-border transition-all uppercase tracking-widest text-xs">Cancel</button>
                 <button 
-                  onClick={() => handleVolunteerStatus(preApproveTarget._id, "approved", isTemporaryToggle)}
+                  onClick={() => handleVolunteerStatus(preApproveTarget._id, isTemporaryToggle ? "temporary" : "active", isTemporaryToggle)}
                   className="flex-1 py-5 rounded-2xl font-black bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all uppercase tracking-widest text-xs flex items-center justify-center gap-2"
                 >
                   {isSubmittingApproval ? <><div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></div> Processing</> : "Confirm Approval"}
