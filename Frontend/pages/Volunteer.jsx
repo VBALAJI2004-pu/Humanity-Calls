@@ -40,6 +40,35 @@ const Volunteer = ({
   const [rawProfileImage, setRawProfileImage] = useState(null);
   const [showCropModal, setShowCropModal] = useState(false);
 
+  const [formData, setFormData] = useState(() => {
+    const saved = loadPendingFormData();
+    return (
+      saved || {
+        fullName: user?.name || "",
+        email: user?.email || "",
+        phone: "",
+        emergencyContact: "",
+        gender: "",
+        interest: "",
+        occupation: "",
+        occupationDetail: "",
+        skills: "",
+        timeCommitment: [],
+        workingMode: [],
+        rolePreference: [],
+        govIdType: "",
+        govIdImage: "",
+        profilePicture: "",
+        bloodGroup: "",
+        dob: "",
+        joiningDate: "",
+        termsAccepted: false,
+        locationAddress: "",
+        deviceDonationChoices: [],
+      }
+    );
+  });
+
   // Helper to convert base64 to File object
   const base64ToFile = (base64String, fileName) => {
     if (!base64String) return null;
@@ -138,35 +167,6 @@ const Volunteer = ({
 
     return () => ctx.revert();
   }, [i18n.language]);
-
-  const [formData, setFormData] = useState(() => {
-    const saved = loadPendingFormData();
-    return (
-      saved || {
-        fullName: user?.name || "",
-        email: user?.email || "",
-        phone: "",
-        emergencyContact: "",
-        gender: "",
-        interest: "",
-        occupation: "",
-        occupationDetail: "",
-        skills: "",
-        timeCommitment: [],
-        workingMode: [],
-        rolePreference: [],
-        govIdType: "",
-        govIdImage: "",
-        profilePicture: "",
-        bloodGroup: "",
-        dob: "",
-        joiningDate: "",
-        termsAccepted: false,
-        locationAddress: "",
-        deviceDonationChoices: [],
-      }
-    );
-  });
 
   useEffect(() => {
     if (user) {

@@ -11,6 +11,7 @@ import { fetchFormAssets } from "../utils/formAssets";
 import { getCurrentLocationLabel } from "../utils/location";
 import withFormAuth from "../components/withFormAuth";
 import { toast } from "react-toastify";
+import axios from "axios";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -122,13 +123,24 @@ const RequestDonors = ({
     if (!user) return;
     setLoading(true);
 
-    const success = await sendEmail(
-      "Donor Request",
-      formData,
-      `New Blood Donor Request for ${formData.patientName}`
-    );
+    try {
+      const token = sessionStorage.getItem("token");
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-    if (success) {
+      // Save to backend so admin can see it
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/blood-requests`,
+        formData,
+        { headers, withCredentials: true },
+      );
+
+      // Keep email notification (optional) for faster response
+      await sendEmail(
+        "Donor Request",
+        formData,
+        `New Blood Donor Request for ${formData.patientName}`,
+      );
+
       clearPendingFormData();
       setFormData({
         verifiedPersonName: user?.name || "",
@@ -141,8 +153,12 @@ const RequestDonors = ({
         locationAddress: "",
         requestImageUrl: "",
       });
+      toast.success("Blood request submitted");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to submit blood request");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleChange = (e) => {

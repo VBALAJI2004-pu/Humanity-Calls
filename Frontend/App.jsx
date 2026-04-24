@@ -38,6 +38,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const VolunteersManager = lazy(() => import("./pages/admin/VolunteersManager"));
 const GalleryManager = lazy(() => import("./pages/admin/GalleryManager"));
 const RequestsManager = lazy(() => import("./pages/admin/RequestsManager"));
+const BloodRequestsManager = lazy(() => import("./pages/admin/BloodRequestsManager"));
 const EmailManager = lazy(() => import("./pages/admin/EmailManager"));
 const AddGalleryManager = lazy(() => import("./pages/admin/AddGalleryManager"));
 const FormImagesManager = lazy(() => import("./pages/admin/FormImagesManager"));
@@ -121,6 +122,7 @@ const AppContent = () => {
               <Route path="volunteers" element={<VolunteersManager />} />
               <Route path="gallery" element={<GalleryManager />} />
               <Route path="requests" element={<RequestsManager />} />
+              <Route path="blood-requests" element={<BloodRequestsManager />} />
               <Route path="send-mails" element={<EmailManager />} />
               <Route path="add-gallery" element={<AddGalleryManager />} />
               <Route path="form-images" element={<FormImagesManager />} />

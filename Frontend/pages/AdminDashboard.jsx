@@ -6,6 +6,7 @@ import {
   FaSignOutAlt,
   FaUserFriends,
   FaClipboardList,
+  FaTint,
   FaEnvelope,
   FaImages,
   FaPlusCircle,
@@ -21,6 +22,7 @@ const NAV_COLORS = {
   volunteers:  { bg: "bg-indigo-500",   text: "text-indigo-500",   light: "bg-indigo-50",   ring: "ring-indigo-200"  },
   "send-mails":{ bg: "bg-violet-500",   text: "text-violet-500",   light: "bg-violet-50",   ring: "ring-violet-200"  },
   requests:    { bg: "bg-amber-500",    text: "text-amber-500",    light: "bg-amber-50",    ring: "ring-amber-200"   },
+  "blood-requests": { bg: "bg-rose-500", text: "text-rose-500", light: "bg-rose-50", ring: "ring-rose-200" },
   "form-images":{ bg: "bg-blue-500",    text: "text-blue-500",     light: "bg-blue-50",      ring: "ring-blue-200"    },
   gallery:     { bg: "bg-teal-500",     text: "text-teal-500",     light: "bg-teal-50",     ring: "ring-teal-200"    },
   "add-gallery":{ bg: "bg-pink-500",   text: "text-pink-500",     light: "bg-pink-50",     ring: "ring-pink-200"    },
@@ -31,6 +33,7 @@ const AdminDashboard = () => {
   const location = useLocation();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [openBloodRequestsCount, setOpenBloodRequestsCount] = useState(0);
 
   useEffect(() => {
     const token = sessionStorage.getItem("adminToken");
@@ -44,11 +47,18 @@ const AdminDashboard = () => {
   const fetchPendingCount = async () => {
     try {
       const token = sessionStorage.getItem("adminToken");
-      const response = await axios.get(
+      const [volunteerRes, bloodRes] = await Promise.all([
+        axios.get(
         `${import.meta.env.VITE_API_URL}/volunteers?status=pending`,
         { headers: { Authorization: `Bearer ${token}` } },
-      );
-      setPendingRequestsCount(response.data.length);
+        ),
+        axios.get(
+          `${import.meta.env.VITE_API_URL}/blood-requests?status=open`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        ),
+      ]);
+      setPendingRequestsCount(volunteerRes.data.length);
+      setOpenBloodRequestsCount(bloodRes.data.length);
     } catch (err) {
       console.error("Failed to fetch pending count", err);
     }
@@ -64,6 +74,7 @@ const AdminDashboard = () => {
     { id: "volunteers",   label: "Volunteers",       icon: <FaUserFriends />  },
     { id: "send-mails",   label: "Send Mails",        icon: <FaEnvelope />     },
     { id: "requests",     label: "Requests",          icon: <FaClipboardList />, badge: pendingRequestsCount },
+    { id: "blood-requests", label: "Blood Requests",  icon: <FaTint />, badge: openBloodRequestsCount },
     { id: "form-images",  label: "Form Images",       icon: <FaImage />        },
     { id: "gallery",      label: "Gallery",           icon: <FaImages />       },
     { id: "add-gallery",  label: "Add Gallery",       icon: <FaPlusCircle />   },

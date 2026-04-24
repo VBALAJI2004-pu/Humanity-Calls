@@ -14,6 +14,7 @@ import emailUploadRoutes from "./routes/emailUploadRoutes.js";
 import carouselRoutes from "./routes/carouselRoutes.js";
 import publicFormRoutes from "./routes/publicFormRoutes.js";
 import formAssetRoutes from "./routes/formAssetRoutes.js";
+import bloodRequestRoutes from "./routes/bloodRequestRoutes.js";
 import { initAdmin } from "./controllers/authController.js";
 import { initBirthdayCron } from "./utils/birthdayCron.js";
 
@@ -70,6 +71,7 @@ app.use("/api/email", emailUploadRoutes);
 app.use("/api/carousel", carouselRoutes);
 app.use("/api/public", publicFormRoutes);
 app.use("/api/form-assets", formAssetRoutes);
+app.use("/api/blood-requests", bloodRequestRoutes);
 app.use("/api", emailRoutes);
 
 const PORT = process.env.PORT || 5000;
